@@ -19,6 +19,9 @@ ENV/
 *.swp
 *.swo
 
+# Game save files
+saves/
+
 # OS specific files
 .DS_Store
 Thumbs.db

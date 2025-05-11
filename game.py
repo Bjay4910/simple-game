@@ -3,6 +3,7 @@
 import random
 import time
 import os
+import json
 
 class TextAdventure:
     def __init__(self):
@@ -228,6 +229,22 @@ class TextAdventure:
         
         elif action in ["help"]:
             self.show_help()
+
+        elif action in ["save"]:
+            success, message = self.save_game()
+            if success:
+                self.print_slowly(f"\nGame saved successfully to {message}")
+            else:
+                self.print_slowly(f"\nFailed to save game: {message}")
+
+        elif action in ["load"]:
+            success, message = self.load_game()
+            if success:
+                self.print_slowly(f"\n{message}")
+                self.clear_screen()
+                return "loaded"  # Special signal to refresh game state
+            else:
+                self.print_slowly(f"\n{message}")
     
     def show_help(self):
         self.print_slowly("\n--- Help Menu ---")
@@ -237,18 +254,102 @@ class TextAdventure:
         self.print_slowly("- drop [item]: Drop an item from your inventory")
         self.print_slowly("- examine/look/inspect [item]: Look at an item more closely")
         self.print_slowly("- use [item]: Use an item in your inventory")
+        self.print_slowly("- save: Save your current game")
+        self.print_slowly("- load: Load a previously saved game")
         self.print_slowly("- help: Show this help menu")
         self.print_slowly("- quit/exit: End the game")
-    
+
+    def save_game(self):
+        """Save the current game state to a JSON file."""
+        save_data = {
+            "player": self.player,
+            "locations": self.locations
+        }
+
+        # Create saves directory if it doesn't exist
+        if not os.path.exists("saves"):
+            os.makedirs("saves")
+
+        # Get player name or use 'default' if not set
+        player_name = self.player.get("name", "default").lower().replace(" ", "_")
+        save_path = f"saves/{player_name}_save.json"
+
+        try:
+            with open(save_path, 'w') as save_file:
+                json.dump(save_data, save_file, indent=4)
+            return True, save_path
+        except Exception as e:
+            return False, str(e)
+
+    def load_game(self):
+        """Load a game from a JSON save file."""
+        # Check if saves directory exists
+        if not os.path.exists("saves"):
+            return False, "No saved games found."
+
+        # List available save files
+        save_files = [f for f in os.listdir("saves") if f.endswith("_save.json")]
+
+        if not save_files:
+            return False, "No saved games found."
+
+        # If player name is known, try to load their save directly
+        player_name = self.player.get("name", "").lower().replace(" ", "_")
+        player_save = f"{player_name}_save.json"
+
+        save_path = None
+        if player_name and player_save in save_files:
+            save_path = f"saves/{player_save}"
+        elif len(save_files) == 1:
+            # If only one save exists, use that
+            save_path = f"saves/{save_files[0]}"
+        else:
+            # Let the player choose from multiple saves
+            self.print_slowly("\nAvailable saved games:")
+            for i, save_file in enumerate(save_files, 1):
+                # Display without the _save.json part
+                name = save_file.replace("_save.json", "").replace("_", " ").title()
+                self.print_slowly(f"{i}. {name}")
+
+            self.print_slowly("\nEnter the number of the save to load, or 'cancel' to go back:")
+            choice = input("> ").strip().lower()
+
+            if choice == "cancel":
+                return False, "Load canceled."
+
+            try:
+                choice_index = int(choice) - 1
+                if 0 <= choice_index < len(save_files):
+                    save_path = f"saves/{save_files[choice_index]}"
+                else:
+                    return False, "Invalid selection."
+            except ValueError:
+                return False, "Invalid input."
+
+        try:
+            with open(save_path, 'r') as save_file:
+                save_data = json.load(save_file)
+
+            # Restore game state
+            self.player = save_data["player"]
+            self.locations = save_data["locations"]
+            return True, f"Game loaded from {save_path}"
+        except Exception as e:
+            return False, f"Error loading game: {str(e)}"
+
     def game_loop(self):
         while True:
             self.show_status()
             cmd = self.get_command()
-            
-            if self.process_command(cmd) == "quit":
+
+            result = self.process_command(cmd)
+            if result == "quit":
                 self.print_slowly("\nThanks for playing! Goodbye.")
                 break
-            
+            elif result == "loaded":
+                # Game state has been loaded, continue with refreshed state
+                continue
+
             self.clear_screen()
 
 if __name__ == "__main__":

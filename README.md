@@ -14,6 +14,7 @@ In this game, you play as an adventurer exploring a mysterious forest. You can n
 - Health system
 - Special events triggered by your actions
 - Hidden treasure that requires specific items to access
+- Save and load game functionality
 
 ## How to Play
 
@@ -26,6 +27,8 @@ In this game, you play as an adventurer exploring a mysterious forest. You can n
    - `drop [item]`: Drop an item from your inventory
    - `examine/look/inspect [item]`: Look at an item more closely
    - `use [item]`: Use an item in your inventory
+   - `save`: Save your current game progress
+   - `load`: Load a previously saved game
    - `help`: Show the help menu
    - `quit/exit`: End the game
 
