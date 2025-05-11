@@ -1,0 +1,2 @@
+# This game uses only standard Python libraries
+# No external dependencies required
